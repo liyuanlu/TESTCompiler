@@ -10,4 +10,6 @@ public class Symbol {
 
     public int address;
 
+    public boolean isInit = false;
+
 }

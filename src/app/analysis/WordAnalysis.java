@@ -235,7 +235,7 @@ public class WordAnalysis {
     }
 
     public void saveText(){
-        String path = "D:\\QQFiles\\963187848\\FileRecv\\MobileFile\\wordanalysis(1)\\WordAnalysis\\src\\app\\lex2.txt";
+        String path = "/home/liyuanlu/newDisk/data/IdeaProjects/CompilerPrinple/src/app/lex2.txt";
         Utils.saveStringToTxt(path,right);
     }
 

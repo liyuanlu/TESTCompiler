@@ -17,6 +17,7 @@ public class Test{
 
     private List<String> ID;
     private List<String> NUM;
+    private List<String> texts;
 
     private String ch;
     private String value;
@@ -27,8 +28,14 @@ public class Test{
     private int labelP = 0;
     private int dataP = 0;
 
+    public Test(List<String> ID, List<String> NUM, List<String> texts) {
+        this.ID = ID;
+        this.NUM = NUM;
+        this.texts = texts;
+    }
+
     private void getNextSymbol(){
-        //TODO 读取并输出下一个变量的变量名以及值
+
     }
 
     private String getIndexSymbol(int index){
@@ -499,6 +506,27 @@ public class Test{
         varTable[varTableP].address = dataP;
         dataP++;
         varTableP++;
+        return es;
+    }
+
+    private int TESTParse(){
+        int es = 0;
+        es = program();
+        print("==================result================");
+        switch (es){
+            case 0:print("success!");break;
+            case 1:print("缺少{");break;
+            case 2:print("缺少}");break;
+            case 3:print("缺少标志符");break;
+            case 4:print("缺少分号");break;
+            case 5:print("缺少(");break;
+            case 6:print("缺少)");break;
+            case 7:print("缺少操作数");break;
+            case 21:print("符号表溢出");break;
+            case 22:print("变量重复定义");break;
+            case 23:print("变量未定义");break;
+            default:print("error!!!!!!");break;
+        }
         return es;
     }
 
