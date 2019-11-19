@@ -1,23 +1,20 @@
 package app.analysis;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
+ * 语法分析及中间代码生成程序
  * Created by LazyLu
  * On 2019/11/15.
  */
-public class LanguageAnalysis {
+public class GrammarAndMean {
 
     private static final int MAX_VAR_TABLE_P = 1000;
 
     private StringBuilder middle = new StringBuilder();
 
-    private Map<String,String> nameMap = new HashMap<>();
-    private List<String> ID = new ArrayList<>();
-    private List<String> NUM = new ArrayList<>();
+    private List<String> ID;
+    private List<String> NUM;
     private List<String> firstA = new ArrayList<>();
     private List<String> firstB = new ArrayList<>();
     private List<String> firstC = new ArrayList<>();
@@ -66,8 +63,9 @@ public class LanguageAnalysis {
     private int varTableP = 0;
     private int labelP = 0;
     private int dataP = 0;
+    private Set<String> notDefaultValue = new HashSet<>();
 
-    public LanguageAnalysis(List<String> texts,List<String> ID,List<String> NUM) {
+    public GrammarAndMean(List<String> texts, List<String> ID, List<String> NUM) {
         this.texts = texts;
         this.ID = ID;
         this.NUM = NUM;
@@ -78,17 +76,11 @@ public class LanguageAnalysis {
      * init sets.
      */
     private void initSet() {
-
-        //add data to first sets.
         firstA.add("{");
-
         firstB.add("int");
         firstB.add("ε");
-
         firstC.addAll(firstB);
-
         firstD.add("int");
-
         firstE.add("if");
         firstE.add("while");
         firstE.add("for");
@@ -98,11 +90,8 @@ public class LanguageAnalysis {
         firstE.addAll(ID);
         firstE.add(";");
         firstE.add("ε");
-
         firstF.addAll(firstE);
-
         firstG.add("if");
-
         firstH.add("while");
         firstI.add("for");
         firstJ.add("read");
@@ -114,38 +103,25 @@ public class LanguageAnalysis {
         firstP.add("for");
         firstQ.add("read");
         firstR.addAll(ID);
-
         firstS.add("(");
         firstS.addAll(ID);
         firstS.addAll(NUM);
-
         firstT.addAll(firstS);
-
         firstU.add("(");
-
         firstV.add("*");
         firstV.add("/");
         firstV.add("ε");
-
         firstW.add("+");
         firstW.add("-");
         firstW.add("ε");
-
         firstX.add("write");
-
         firstY.add("{");
-
         firstZ.addAll(ID);
-
         firstAA.add("if");
-
         firstAB.add("(");
         firstAB.addAll(ID);
         firstAB.addAll(NUM);
-
-        //add data to follow sets.
         followProgram.add("#");
-
         followDeclarationList.add("if");
         followDeclarationList.add("while");
         followDeclarationList.add("for");
@@ -154,7 +130,6 @@ public class LanguageAnalysis {
         followDeclarationList.add("{");
         followDeclarationList.add(";");
         followDeclarationList.addAll(ID);
-
         followDeclarationListNew.add("if");
         followDeclarationListNew.add("while");
         followDeclarationListNew.add("for");
@@ -163,11 +138,8 @@ public class LanguageAnalysis {
         followDeclarationListNew.add("{");
         followDeclarationListNew.addAll(ID);
         followDeclarationListNew.add(";");
-
         followStatementList.add("{");
-
         followStatementListNew.add("}");
-
         followArithmeticExpression.add(";");
         followArithmeticExpression.add(">=");
         followArithmeticExpression.add("<=");
@@ -176,9 +148,7 @@ public class LanguageAnalysis {
         followArithmeticExpression.add(")");
         followArithmeticExpression.add(">");
         followArithmeticExpression.add("<");
-
         followArithmeticExpressionNew.addAll(followArithmeticExpression);
-
         followTermNew.add(";");
         followTermNew.add(")");
         followTermNew.add("+");
@@ -192,9 +162,6 @@ public class LanguageAnalysis {
         followTermNew.add("(");
         followTermNew.addAll(ID);
         followTermNew.addAll(NUM);
-
-
-
     }
 
     //获取下一个字符函数
@@ -210,15 +177,33 @@ public class LanguageAnalysis {
         }
     }
 
+    /**
+     * 查找符号表
+     * @param name 符号名字
+     * @return 在内存中的地址
+     */
     private int lookUp(String name) throws Exception {
         for (int i = 0; i < varTableP; i++){
             if (name.equals(varTable[i].name)){
+                if (isFirst(name)){
+                    //第一次出现后标记为出现过
+                    varTable[i].isFirst = false;
+                }else {
+                    //不是第一次出现且没有赋初值则提示
+                    if (!varTable[i].isInit){
+                        notDefaultValue.add(name);
+                    }
+                }
                 return varTable[i].address;
             }
         }
         throw new Exception(name + "未定义");
     }
 
+    /**
+     * 把变量添加到符号表
+     * @param name 变量名
+     */
     private void nameDef(String name) throws Exception {
         if (varTableP > MAX_VAR_TABLE_P){
             throw new Exception("符号表已满！");
@@ -230,13 +215,57 @@ public class LanguageAnalysis {
         varTableP++;
     }
 
+    /**
+     * 修改第一次出现标记
+     * @param name 变量名
+     * @param isInit 是否出现
+     */
+    private void setFirst(String name,boolean isInit){
+        for (int i = 0; i < varTableP; i++){
+            if (name.equals(varTable[i].name)){
+                varTable[i].isFirst = isInit;
+                return;
+            }
+        }
+    }
+
+    /**
+     * 修改是否赋初值标记
+     * @param name 变量名
+     * @param isInit 是否赋初值
+     */
+    private void setInit(String name,boolean isInit){
+        for (int i = 0; i < varTableP; i++){
+            if (name.equals(varTable[i].name)){
+                varTable[i].isInit = isInit;
+                return;
+            }
+        }
+    }
+
+    private boolean isFirst(String name) throws Exception {
+        for(Symbol symbol : varTable){
+            if (name.equals(symbol.name)){
+                return symbol.isFirst;
+            }
+        }
+        throw new Exception("没有找到该变量是否第一次出现！");
+    }
+
     //语法分析程序开始
     public void start() throws Exception {
         getNextSymbol();    //获取下一个字符
         try {
             program();
             System.out.println("No errors！");
-            Utils.saveStringToTxt("/home/liyuanlu/newDisk/data/IdeaProjects/CompilerPrinple/src/app/middle.txt",middle.toString());
+            if (notDefaultValue.size() > 0){
+                //输出没有赋初值的警告
+                System.out.println("Warning:");
+                for (String s : notDefaultValue){
+                    System.out.println("变量"+ s + "没有赋初值！");
+                }
+            }
+            ReadTxtUtil.saveStringToTxt("/home/liyuanlu/newDisk/data/IdeaProjects/CompilerPrinple/src/app/middle.txt",middle.toString());
         } catch (Exception e) {
             //输出语法分析错误
             System.out.println("index:" + index + " 符号" + ch + " " + e.getMessage());
@@ -266,7 +295,6 @@ public class LanguageAnalysis {
         if (firstE.contains(ch)){
             statementListNew();
         }else if (firstE.contains("ε") && followStatementList.contains(ch)){
-            getNextSymbol();
             return;
         }else {
             error(ch + "错误");
@@ -290,28 +318,20 @@ public class LanguageAnalysis {
         //逐层非终结符递归调用
         if (firstG.contains(ch)){
             ifStat();
-            return;
         }else if (firstH.contains(ch)){
             whileStat();
-            return;
         }else if (firstI.contains(ch)){
             forStat();
-            return;
         }else if (firstJ.contains(ch)){
             readStat();
-            return;
         }else if (firstK.contains(ch)){
             writeStat();
-            return;
         }else if (firstL.contains(ch)){
             compoundStat();
-            return;
         }else if (firstM.contains(ch)){
             assignmentStat();
-            return;
         }else if (firstN.contains(ch)){
             getNextSymbol();
-            return;
         }else{
             error(ch + "错误");
         }
@@ -325,7 +345,6 @@ public class LanguageAnalysis {
             if (";".equals(ch)){
                 //匹配到终结符后读取下一个字符并返回
                 getNextSymbol();
-                return;
             }else{
                 error("index:" + index + "  " + ch + "前缺少;");
             }
@@ -341,7 +360,6 @@ public class LanguageAnalysis {
             statementList();
             if ("}".equals(ch)){
                 getNextSymbol();
-                return;
             }else{
                 error("index:" + index + "  " + ch + "前缺少)");
             }
@@ -359,7 +377,6 @@ public class LanguageAnalysis {
             if (";".equals(ch)){
                 print("OUT");
                 getNextSymbol();
-                return;
             }else{
                 error("index:" + index + "  " + ch + "前缺少;");
             }
@@ -374,6 +391,7 @@ public class LanguageAnalysis {
         if (firstQ.contains(ch)){
             getNextSymbol();
             if (ID.contains(ch)){
+                setInit(ch,true);
                 address = lookUp(ch);
                 print("IN");
                 print("STO " + address);
@@ -381,7 +399,6 @@ public class LanguageAnalysis {
                 getNextSymbol();
                 if (";".equals(ch)){
                     getNextSymbol();
-                    return;
                 }else{
                     error("index:" + index + "  " + ch + "前缺少;");
                 }
@@ -424,7 +441,6 @@ public class LanguageAnalysis {
                             statement();
                             print("BR LABEL" + label4);
                             print("LABEL" + label2 + ":");
-                            return;
                         }else{
                             error("index:" + index + "  " + ch + "前缺少)");
                         }
@@ -444,16 +460,17 @@ public class LanguageAnalysis {
 
     //ID
     private void assignmentExpression() throws Exception {
-        //TODO have a error.
         if (ID.contains(ch)){
             int address;
+            setFirst(ch,true);      //标记为第一次出现
             address = lookUp(ch);
+            String var = ch;                   //保存当前符号
             getNextSymbol();
             if ("=".equals(ch)){
                 getNextSymbol();
                 arithmeticExpression();
                 print("STO " + address);
-                return;
+                setInit(var,true);      //标记已经赋初值
             }else{
                 error("index:" + index + "  " + ch + "前缺少=");
             }
@@ -469,7 +486,6 @@ public class LanguageAnalysis {
             arithmeticExpressionNew();
         }else if (firstS.contains("ε") && followArithmeticExpression.contains(ch)){
             getNextSymbol();
-            return;
         }else {
             error(ch + "错误");
         }
@@ -487,7 +503,6 @@ public class LanguageAnalysis {
                 print("SUB");
             }
             arithmeticExpressionNew();
-            return;
         }else if (firstW.contains("ε") && followArithmeticExpressionNew.contains(ch)){
             return;
         }else{
@@ -516,7 +531,6 @@ public class LanguageAnalysis {
             }else {
                 print("DIV");
             }
-            return;
         }else if (firstV.contains("ε") && followTermNew.contains(ch)){
             return;
         }else{
@@ -531,7 +545,6 @@ public class LanguageAnalysis {
             arithmeticExpression();
             if (")".equals(ch)){
                 getNextSymbol();
-                return;
             }else{
                 error("index:" + index + "  " + ch + "前缺少)");
             }
@@ -540,11 +553,9 @@ public class LanguageAnalysis {
             address = lookUp(ch);
             print("LOAD " + address);
             getNextSymbol();
-            return;
         }else if (NUM.contains(ch)){
             print("LOADI " + ch);
             getNextSymbol();
-            return;
         }else{
             error(ch + "错误");
         }
@@ -567,7 +578,6 @@ public class LanguageAnalysis {
                     statement();
                     print("BR LABEL" + label1);
                     print("LABEL" + label2 + ":");
-                    return;
                 }else{
                     error("index:" + index + "  " + ch + "前缺少)");
                 }
@@ -634,7 +644,6 @@ public class LanguageAnalysis {
                         statement();
                     }
                     print("LABEL" + label2 + ":");
-                    return;
                 }else{
                     error("index:" + index + "  " + ch + "前缺少)");
                 }
@@ -652,7 +661,6 @@ public class LanguageAnalysis {
             declarationListNew();
         }else if (firstB.contains("ε") && followDeclarationList.contains(ch)){
             getNextSymbol();
-            return;
         }else {
             error(ch + "错误");
         }
@@ -679,7 +687,6 @@ public class LanguageAnalysis {
                 getNextSymbol();
                 if (";".equals(ch)){
                     getNextSymbol();
-                    return;
                 }else{
                     error("index:" + index + "  " + ch + "前缺少;");
                 }

@@ -12,4 +12,6 @@ public class Symbol {
 
     public boolean isInit = false;
 
+    public boolean isFirst = false;
+
 }

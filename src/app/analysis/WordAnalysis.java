@@ -1,27 +1,26 @@
 package app.analysis;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * 词法分析程序
  * Created by LazyLu
  * On 2019/11/15.
  */
 public class WordAnalysis {
+
+    private static final String SOURCE_CODE_PATH = "./src/app/SourceCode.txt";
+//    private static final String SOURCE_CODE_PATH = "./src/app/GrammarTestSourceCode.txt";
+//    private static final String SOURCE_CODE_PATH = "./src/app/WordTestSourceCode.txt";
+    private static final String SOURCE_CODE_WORDS_PATH = "./src/app/words.txt";
 
     private List<String> words = new ArrayList<>();     //保留字
     private List<Character> divideChars = new ArrayList<>();    //分界符
     private List<Character> operator = new ArrayList<>();       //+ - *
     private List<Character> operator1 = new ArrayList<>();      //< > =
     private String text;
-    private String path;
     private List<String> errors = new ArrayList<>();
     private String right = "";
     private int type = 0;
@@ -29,9 +28,14 @@ public class WordAnalysis {
     private List<String> NUM = new ArrayList<>();
     private List<String> reserveWords = new ArrayList<>();
 
-    public WordAnalysis(String path) {
-        this.path = path;
+    public WordAnalysis() {
         initWords();
+    }
+
+    public void start() throws IOException {
+        readSourceCode();
+        analysisCode();
+        saveWords();
     }
 
     private void initWords(){
@@ -55,9 +59,8 @@ public class WordAnalysis {
         reserveWords.add("read");
     }
 
-    public void analysisText(){
+    private void analysisCode(){
         char[] chars = text.toCharArray();
-        List<Integer> indexes = new ArrayList<>();
         int status = 0;
         char ch;
         char prech;
@@ -100,36 +103,6 @@ public class WordAnalysis {
         for (String s : errors){
             System.out.println(s);
         }
-    }
-
-    public List<String> getWords(){
-        return words;
-    }
-
-    public List<String> getID(){
-        return ID;
-    }
-
-    public List<String> getNUM(){
-        return NUM;
-    }
-
-    private void saveRightWord(int start, int end){
-        right += text.substring(start,end+1) + "\n";
-        words.add(text.substring(start,end+1));
-        if (type == 1 && !reserveWords.contains(text.substring(start,end+1))){
-            ID.add(text.substring(start,end+1));
-        }else if (type == 2 || type == 11){
-            NUM.add(text.substring(start,end+1));
-        }
-    }
-
-    private void error(char[] chars,int index) {
-        errors.add("error,未知符号: " + chars[index] + "  index:" + index);
-    }
-
-    private void finalError(int index){
-        errors.add("error,注释不完整:" + text.substring(index,text.length()-1) + "  index:" + index);
     }
 
     /**
@@ -234,13 +207,49 @@ public class WordAnalysis {
         }
     }
 
-    public void saveText(){
-        String path = "/home/liyuanlu/newDisk/data/IdeaProjects/CompilerPrinple/src/app/lex2.txt";
-        Utils.saveStringToTxt(path,right);
+    /**
+     * 保存单词
+     */
+    private void saveWords() throws IOException {
+        ReadTxtUtil.saveStringToTxt(SOURCE_CODE_WORDS_PATH,right);
     }
 
-    public void readText(){
-        text = Utils.readStringFromTxt(path);
+    /**
+     * 读取源代码
+     */
+    private void readSourceCode() throws IOException {
+        text = ReadTxtUtil.readStringFromTxt(SOURCE_CODE_PATH);
+    }
+
+
+    public List<String> getWords(){
+        return words;
+    }
+
+    public List<String> getID(){
+        return ID;
+    }
+
+    public List<String> getNUM(){
+        return NUM;
+    }
+
+    private void saveRightWord(int start, int end){
+        right += text.substring(start,end+1) + "\n";
+        words.add(text.substring(start,end+1));
+        if (type == 1 && !reserveWords.contains(text.substring(start,end+1))){
+            ID.add(text.substring(start,end+1));
+        }else if (type == 2 || type == 11){
+            NUM.add(text.substring(start,end+1));
+        }
+    }
+
+    private void error(char[] chars,int index) {
+        errors.add("error,未知符号: " + chars[index] + "  index:" + index);
+    }
+
+    private void finalError(int index){
+        errors.add("error,注释不完整:" + text.substring(index,text.length()-1) + "  index:" + index);
     }
 
     public String getText() {
