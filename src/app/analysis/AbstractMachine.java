@@ -121,19 +121,86 @@ public class AbstractMachine {
                 int x = scanner.nextInt();
                 stack.push(x);
                 break;
+
             case "ADD":
-                top = stack.peek();
-                stack.pop();
-                next = stack.peek();
-                stack.pop();
-                stack.push(top + next);
-                break;
+            case "SUB":
             case "MULT":
+            case "DIV":
+            case "EQ":
+            case "NOTEQ":
+            case "GT":
+            case "GE":
+            case "LE":
+            case "AND":
+            case "OR":
                 top = stack.peek();
                 stack.pop();
                 next = stack.peek();
                 stack.pop();
-                stack.push(top*next);
+            switch (string){
+                case "ADD":
+                    stack.push(top + next);
+                    break;
+                case "SUB":
+                    stack.push(next - top);
+                    break;
+                case "MULT":
+                    stack.push(top*next);
+                    break;
+                case "DIV":
+                    stack.push(next/top);
+                    break;
+                case "EQ":
+                    if (top == next){
+                        stack.push(1);
+                    }else {
+                        stack.push(0);
+                    }
+                    break;
+                case "NOTEQ":
+                    if (top == next){
+                        stack.push(0);
+                    }else {
+                        stack.push(1);
+                    }
+                    break;
+                case "GT":
+                    if (next > top){
+                        stack.push(1);
+                    }else {
+                        stack.push(0);
+                    }
+                    break;
+                case "GE":
+                    if (next >= top){
+                        stack.push(1);
+                    }else {
+                        stack.push(0);
+                    }
+                    break;
+                case "LE":
+                    if (next <= top){
+                        stack.push(1);
+                    }else {
+                        stack.push(0);
+                    }
+                    break;
+                case "AND":
+                    stack.push(top & next);
+                    break;
+                case "OR":
+                    stack.push(top | next);
+                    break;
+            }
+            break;
+            case "NOT":
+                top = stack.peek();
+                stack.pop();
+                if (top == 0) {
+                    stack.push(1);
+                } else {
+                    stack.push(0);
+                }
                 break;
             case "OUT":
                 System.out.println(stack.peek());
@@ -141,16 +208,8 @@ public class AbstractMachine {
                 break;
             case "STOP":
                 System.out.println("程序结束！");
+                System.exit(0);
                 break;
         }
     }
-
-    public static void main(String[] args) {
-        try {
-            new AbstractMachine().start();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
 }
